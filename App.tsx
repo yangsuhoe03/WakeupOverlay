@@ -1,35 +1,11 @@
 import React from 'react';
-import { View, Button, NativeModules, StyleSheet } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import AppNavigator from './navigation/AppNavigator';
 
-const { OverlayModule } = NativeModules;
-
-const App = () => {
-  const startOverlay = () => {
-    OverlayModule.startOverlay();
-  };
-
-  const stopOverlay = () => {
-    OverlayModule.stopOverlay();
-  };
-
+export default function App() {
   return (
-    <View style={styles.container}>
-      <Button title="Start Overlay" onPress={startOverlay} />
-      <View style={styles.space} />
-      <Button title="Stop Overlay~" onPress={stopOverlay} />
-    </View>
+    <NavigationContainer>
+      <AppNavigator />
+    </NavigationContainer>
   );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  space: {
-    height: 20,
-  },
-});
-
-export default App;
+}
