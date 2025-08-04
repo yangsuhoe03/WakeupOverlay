@@ -16,7 +16,7 @@ const App = () => {
     <View style={styles.container}>
       <Button title="Start Overlay" onPress={startOverlay} />
       <View style={styles.space} />
-      <Button title="Stop Overlay" onPress={stopOverlay} />
+      <Button title="Stop Overlay~" onPress={stopOverlay} />
     </View>
   );
 };
