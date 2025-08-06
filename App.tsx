@@ -7,24 +7,8 @@ import { useState } from 'react';
 const youtubeIframeHTML = `
   <!DOCTYPE html>
   <html>
-    <head>
-      <style>
-        html, body {
-          margin: 0;
-          padding: 0;
-          height: 100%;
-          width: 100%;
-          overflow: hidden;
-          background-color: black;
-        }
-        #player {
-          position: absolute;
-          top: 0;
-          left: 0;
-          height: 100%;
-          width: 100%;
-        }
-      </style>
+    <body style="margin:0; padding:0; overflow:hidden;">
+      <div id="player"></div>
       <script>
         var tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
@@ -36,37 +20,26 @@ const youtubeIframeHTML = `
           player = new YT.Player('player', {
             height: '100%',
             width: '100%',
-            videoId: '2HNvSIQl3vg',
-            playerVars: {
-              autoplay: 1,
-              playsinline: 1,
-              rel: 0,
-              modestbranding: 1,
-              mute: 1
-            },
+            videoId: 'dQw4w9WgXcQ', // 기본으로 보여줄 영상 ID
             events: {
-              onReady: onPlayerReady,
-              onStateChange: onPlayerStateChange
-              }
+              'onReady': onPlayerReady,
+              'onStateChange': onPlayerStateChange
             }
           });
         }
+
         function onPlayerReady(event) {
           event.target.playVideo();
-          event.target.unMute();
         }
 
         function onPlayerStateChange(event) {
-          // 여기에 상태변화 로직 추가 가능
-        } 
+          // 원하는 동작 넣을 수 있음
+        }
       </script>
-    </head>
-    <body>
-      <div id="player"></div>
     </body>
   </html>
 `;
-;
+
 
 
 
