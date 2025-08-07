@@ -1,7 +1,9 @@
 import React from 'react';
 import { View, Button, NativeModules, StyleSheet, Modal } from 'react-native';
-import { WebView} from 'react-native-webview';
+import { WebView } from 'react-native-webview';
 import { useState } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import AppNavigator from './navigation/AppNavigator';
 
 
 const youtubeIframeHTML = `
@@ -45,6 +47,7 @@ const youtubeIframeHTML = `
 
 const { OverlayModule } = NativeModules;
 
+/*
 const App = () => {
   const [showWebView, setShowWebView] = useState(false);
 
@@ -79,6 +82,15 @@ const App = () => {
         </View>
       </Modal>
     </View>
+  );
+};
+*/
+
+const App = () => {
+  return (
+    <NavigationContainer>
+      <AppNavigator />
+    </NavigationContainer>
   );
 };
 
