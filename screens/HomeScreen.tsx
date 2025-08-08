@@ -1,5 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Switch, } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { HomeStackParamList } from '../navigation/HomeStackNavigator';
 
 const dummyAlarms = [ //이건 예시 나중에 데이터 저장 구현하기
     {
@@ -19,6 +22,12 @@ const dummyAlarms = [ //이건 예시 나중에 데이터 저장 구현하기
 
 
 const HomeScreen = () => {
+    const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
+
+    const handleAddAlarm = () => {
+        navigation.navigate('AlarmCreate');
+    };
+
     const alarms = dummyAlarms; //임시 추후 대체하기
 
     return (
@@ -44,7 +53,7 @@ const HomeScreen = () => {
             {/* 내 알람 헤더 */}
             <View style={styles.alarmHeader}>
                 <Text style={styles.alarmHeaderText}>내 알람</Text>
-                <TouchableOpacity>
+                <TouchableOpacity onPress={handleAddAlarm}>
                     <Text style={styles.addButton}>+ 추가</Text>
                 </TouchableOpacity>
             </View>
