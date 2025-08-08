@@ -13,8 +13,8 @@ const Stack = createNativeStackNavigator<HomeStackParamList>();
 const HomeStackNavigator = () => {
   return (
     <Stack.Navigator>
-      <Stack.Screen name="Home" component={HomeScreen} options={{ title: '홈' }} />
-      <Stack.Screen name="AlarmCreate" component={AlarmCreateScreen} options={{ title: '알람 추가' }} />
+      <Stack.Screen name="Home" component={HomeScreen} options={{ title: '홈', headerShown: false }} />
+      <Stack.Screen name="AlarmCreate" component={AlarmCreateScreen} options={{ title: '알람 추가', headerShown: false }} />
     </Stack.Navigator>
   );
 };
