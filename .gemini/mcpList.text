@@ -1,0 +1,15 @@
+    "cursor-talk-to-figma-mcp": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@sonnylazuardi/cursor-talk-to-figma-mcp",
+        "--key",
+        "0bfc881e-2a5d-48b5-afb9-131ceaa8c75a",
+        "--profile",
+        "neat-ptarmigan-pkM9U1"
+      ]
+    }

@@ -8,7 +8,7 @@ import TopicSelectScreen from '../screens/TopicSelectScreen ';
 
 export type HomeStackParamList = {
   Home: undefined;
-  AlarmCreate: undefined;
+  AlarmCreate: { alarmToEdit?: any };
   AlarmSound: undefined;
   AlarmVibration: undefined;
   TopicSelect: undefined;

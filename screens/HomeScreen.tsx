@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Switch, Platform, PermissionsAndroid, Modal, ActivityIndicator, Button, Alert, } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp, useIsFocused } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/HomeStackNavigator';
 import { NativeModules } from 'react-native';
@@ -18,21 +19,43 @@ const dummyAlarms = [
         contentType: '자동 추천',
         topics: [],
     },
-    {
-        id: '2',
-        name: '헬스장 가기',
-        period: '오후',
-        time: '07:00',
-        days: ['목', '금'],
-        enabled: false,
-        contentType: '주제 선택',
-        topics: ['운동', '동기부여', '건강'],
-    },
+    // {
+    //     id: '2',
+    //     name: '헬스장 가기',
+    //     period: '오후',
+    //     time: '07:00',
+    //     days: ['목', '금'],
+    //     enabled: false,
+    //     contentType: '주제 선택',
+    //     topics: ['운동', '동기부여', '건강'],
+    // },
 ];
 
 
 
-const HomeScreen = () => {
+const HomeScreen = () => { 
+
+     const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
+     const [alarms, setAlarms] = useState<any[]>([]);
+     const isFocused = useIsFocused();
+
+     useEffect(() => {
+        const loadAlarms = async () => {
+            try {
+                const existingAlarms = await AsyncStorage.getItem('@alarms');
+                setAlarms(existingAlarms != null ? JSON.parse(existingAlarms) : []);
+            } catch (e) {
+                console.error('Failed to load alarms.', e);
+                Alert.alert('오류', '알람 목록을 불러오는 데 실패했습니다.');
+            }
+        };
+
+        if (isFocused) {
+            loadAlarms();
+        }
+     }, [isFocused]);
+
+
 
     const [hasPermission, setHasPermission] = useState<boolean | null>(null);
     const [showPermissionModal, setShowPermissionModal] = useState(false);
@@ -79,13 +102,45 @@ const HomeScreen = () => {
         }
     };
 
-    const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
+    //const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
 
-    const handleAddAlarm = () => {
-        navigation.navigate('AlarmCreate');
+    const handleAddAlarm = () => {//새 알람 추가
+        navigation.navigate('AlarmCreate', {});
+    };
+    const handleEdit = (alarm: any) => { // 알람 수정
+        // 알람 수정 화면으로 이동                                                                 
+        navigation.navigate('AlarmCreate', { alarmToEdit: alarm });                                                     
+    };  
+
+    const handleDelete = (id: string) => {// 알람 삭제
+      // 알람 삭제 확인 모달 표시
+      Alert.alert(
+        "알람 삭제",
+        "정말로 이 알람을 삭제하시겠습니까?",
+        [
+          {
+            text: "취소",
+            style: "cancel"
+          },
+          {
+            text: "삭제",
+            onPress: async () => {
+              try {
+                const updatedAlarms = alarms.filter(alarm => alarm.id !== id);
+                await AsyncStorage.setItem('@alarms', JSON.stringify(updatedAlarms));
+                setAlarms(updatedAlarms);
+              } catch (e) {
+                console.error('Failed to delete alarm.', e);
+                Alert.alert('오류', '알람을 삭제하는 데 실패했습니다.');
+              }
+            },
+            style: 'destructive'
+          }
+        ]
+      );
     };
 
-    const alarms = dummyAlarms; //임시 추후 대체하기
+    //const alarms = dummyAlarms; //임시 추후 대체하기
 
     return (
         <View style={styles.container}>
@@ -156,10 +211,10 @@ const HomeScreen = () => {
                             {/* 스위치 + 수정/삭제 */}
                             <Switch value={item.enabled} />
                             <View style={styles.alarmActions}>
-                                <TouchableOpacity>
+                                <TouchableOpacity onPress={() => handleEdit(item)}>
                                     <Text style={styles.actionButton}>수정</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity>
+                                <TouchableOpacity onPress={() => handleDelete(item.id)}>
                                     <Text style={styles.actionButton}>삭제</Text>
                                 </TouchableOpacity>
                             </View>
