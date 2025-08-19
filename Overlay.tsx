@@ -14,7 +14,7 @@ const OverlayContent = () => {
 
   const onMessage = (event: any) => {
     if (event.nativeEvent.data === 'ended') {
-      OverlayModule.stopOverlay();
+      OverlayModule.closeYoutubeOverlay();
     }
   };
 

@@ -1,55 +1,63 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import ContentPlayerScreen from './ContentPlayerScreen';
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, NativeModules } from 'react-native';
+import notifee from '@notifee/react-native';
+
+const { OverlayModule } = NativeModules;
 
 const AlarmRingingScreen = () => {
-  const [isAlarmStopped, setIsAlarmStopped] = useState(false);
+  const handleDismiss = async () => {
+    console.log('[handleDismiss] Pressed dismiss button.');
+    try {
+      console.log('[handleDismiss] Attempting to cancel all notifications...');
+      await notifee.cancelAllNotifications();
+      console.log('[handleDismiss] Successfully cancelled all notifications.');
 
-  const handleStopAlarm = () => {
-    // 알람 끄는 로직 (소리 멈추기 등)
-    setIsAlarmStopped(true);
+      console.log('[handleDismiss] Showing YouTube overlay...');
+      OverlayModule.showOverlay();
+
+      console.log('[handleDismiss] Closing this alarm screen...');
+      OverlayModule.closeAlarmRingingOverlay();
+    } catch (e) {
+      console.error('[handleDismiss] An error occurred:', e);
+    } finally {
+      console.log('[handleDismiss] Function finished.');
+    }
   };
 
-  if (isAlarmStopped) {
-    // 알람 끈 후에는 바로 컨텐츠 재생 화면 표시
-    return <ContentPlayerScreen />;
-  }
-
-  // 알람 울리는 화면
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>⏰ 알람 울림!</Text>
-      <TouchableOpacity style={styles.stopButton} onPress={handleStopAlarm}>
-        <Text style={styles.stopButtonText}>알람 끄기</Text>
+      <Text style={styles.title}>Wake Up!</Text>
+      <TouchableOpacity style={styles.button} onPress={handleDismiss}>
+        <Text style={styles.buttonText}>알람 끄기</Text>
       </TouchableOpacity>
     </View>
   );
 };
 
-export default AlarmRingingScreen;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FF3B30',
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'black',
   },
   title: {
-    fontSize: 36,
+    fontSize: 48,
     fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 40,
+    color: 'white',
+    marginBottom: 100,
   },
-  stopButton: {
-    backgroundColor: '#fff',
+  button: {
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
     paddingHorizontal: 40,
-    paddingVertical: 15,
-    borderRadius: 30,
+    paddingVertical: 20,
+    borderRadius: 50,
   },
-  stopButtonText: {
-    color: '#FF3B30',
-    fontSize: 20,
+  buttonText: {
+    fontSize: 24,
+    color: 'black',
     fontWeight: 'bold',
   },
 });
+
+export default AlarmRingingScreen;

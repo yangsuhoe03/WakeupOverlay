@@ -6,7 +6,49 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/HomeStackNavigator';
 import { NativeModules } from 'react-native';
 
+import notifee, { TimestampTrigger, TriggerType } from '@notifee/react-native';
+
 const { OverlayModule } = NativeModules;
+
+async function onDisplayNotification() {
+    // Request permissions (required for iOS)
+    await notifee.requestPermission()
+
+    // Create a channel (required for Android)
+    const channelId = await notifee.createChannel({
+      id: 'wakeup-alarm',
+      name: 'Wakeup Alarms',
+      sound: 'default', // 기본 사운드 사용
+      importance: 4, // AndroidImportance.HIGH
+    });
+
+    // Create a time-based trigger
+    const trigger: TimestampTrigger = {
+      type: TriggerType.TIMESTAMP,
+      timestamp: Date.now() + 10000, // 10 seconds from now
+    };
+
+    // Display a trigger notification
+    await notifee.createTriggerNotification(
+      {
+        title: 'Wake Up!',
+        body: '알람을 끄고 새로운 하루를 시작하세요!',
+        android: {
+          channelId,
+          loopSound: true, // 사운드 반복
+          // required for calls and alarms with full-screen intent
+          fullScreenAction: {
+            id: 'default',
+            // Launch the app's AlarmRingingActivity when the alarm fires
+            launchActivity: 'com.wakeupoverlay.AlarmRingingActivity',
+          },
+        },
+      },
+      trigger,
+    );
+
+    Alert.alert('알람 설정 완료', '10초 뒤에 알람이 울립니다.');
+  }
 
 const dummyAlarms = [
     {
@@ -161,6 +203,7 @@ const HomeScreen = () => {
             <View style={styles.nextAlarmBox}>
                 <Text style={styles.nextAlarmTitle}>다음 알람까지</Text>
                 <Text style={styles.nextAlarmTime}>6시간 40분</Text>
+                <Button title="10초 뒤 알람 설정 (테스트)" onPress={() => onDisplayNotification()} />
             </View>
 
             {/* 상태 박스 2개 (성공/실패, 평균 기상 시간) */}

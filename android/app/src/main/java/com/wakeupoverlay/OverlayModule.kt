@@ -73,8 +73,26 @@ class OverlayModule(reactContext: ReactApplicationContext) : ReactContextBaseJav
     }
 
     @ReactMethod
-    fun stopOverlay() { // 오버레이만 닫는 기능은 유지
+    fun closeYoutubeOverlay() {
         val intent = Intent("com.wakeupoverlay.CLOSE_OVERLAY_ACTIVITY")
         reactApplicationContext.sendBroadcast(intent)
+    }
+
+    @ReactMethod
+    fun closeAlarmRingingOverlay() {
+        val intent = Intent("com.wakeupoverlay.CLOSE_ALARM_RINGING_ACTIVITY")
+        reactApplicationContext.sendBroadcast(intent)
+    }
+
+    @ReactMethod
+    fun showOverlay() {
+        val context = currentActivity
+        if (context != null) {
+            val intent = Intent(context, OverlayActivity::class.java)
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+        } else {
+            Log.e("OverlayModule", "Could not get current activity to show overlay.")
+        }
     }
 }
