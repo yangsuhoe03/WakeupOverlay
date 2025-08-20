@@ -1,16 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, TextInput, Alert, } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/HomeStackNavigator';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const AlarmCreateScreen = () => {
 
   const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
-  const route = useRoute<RouteProp<HomeStackParamList, 'AlarmCreate'>>();
-  const { alarmToEdit } = route.params || {};
 
   const [ampm, setAmpm] = useState<'AM' | 'PM'>('AM');
   const [hour, setHour] = useState(7);
@@ -20,21 +17,6 @@ const AlarmCreateScreen = () => {
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
 
   const [alarmName, setAlarmName] = useState('');
-
-  React.useEffect(() => {
-    if (alarmToEdit) {
-      const [h, m] = alarmToEdit.time.split(':');
-      const period = alarmToEdit.period === '오전' ? 'AM' : 'PM';
-      
-      setAlarmName(alarmToEdit.name);
-      setAmpm(period);
-      setHour(parseInt(h, 10));
-      setMinute(parseInt(m, 10));
-      setSelectedDays(alarmToEdit.days.map((day: string) => daysKor.indexOf(day)).filter((i: number) => i !== -1));
-      setAutoRecommend(alarmToEdit.contentType === '자동 추천');
-      setTopics(alarmToEdit.topics || []);
-    }
-  }, [alarmToEdit]);
 
   const toggleDay = (dayIndex: number) => {
     setSelectedDays((prev) =>
@@ -47,7 +29,6 @@ const AlarmCreateScreen = () => {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [selectedSound, setSelectedSound] = useState('기본 알림음');
 
-
   const [vibrationEnabled, setVibrationEnabled] = useState(true);
   const [selectedVibration, setSelectedVibration] = useState('기본 진동');
 
@@ -56,47 +37,6 @@ const AlarmCreateScreen = () => {
 
   const [autoRecommend, setAutoRecommend] = useState(true);
   const [topics, setTopics] = useState<string[]>([]);
-  const [alarmList, setAlarmList] = useState<any[]>([]);
-  const [alarmId, setAlarmId] = useState(1);
-
-
-  const handleSave = async () => {
-    if (alarmName.trim() === '') {
-      Alert.alert('알림', '알람 이름을 입력해주세요.');
-      return;
-    }
-
-    const alarmData = {
-      id: alarmToEdit?.id || `alarm-${new Date().getTime()}`,
-      name: alarmName || '알람',
-      period: ampm === 'AM' ? '오전' : '오후',
-      time: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`,
-      days: selectedDays.map(dayIndex => daysKor[dayIndex]),
-      enabled: alarmToEdit?.enabled ?? true,
-      contentType: autoRecommend ? '자동 추천' : '주제 선택',
-      topics: topics,
-    };
-
-    try {
-      const existingAlarmsJson = await AsyncStorage.getItem('@alarms');
-      const existingAlarms = existingAlarmsJson ? JSON.parse(existingAlarmsJson) : [];
-      
-      let updatedAlarms;
-      if (alarmToEdit) {
-        updatedAlarms = existingAlarms.map((alarm: any) => 
-          alarm.id === alarmToEdit.id ? alarmData : alarm
-        );
-      } else {
-        updatedAlarms = [...existingAlarms, alarmData];
-      }
-
-      await AsyncStorage.setItem('@alarms', JSON.stringify(updatedAlarms));
-      navigation.goBack();
-    } catch (e) {
-      console.error('Failed to save alarm.', e);
-      Alert.alert('오류', '알람을 저장하는 데 실패했습니다.');
-    }
-  };
 
   const handleSelectSound = () => {
     navigation.navigate('AlarmSound');
@@ -276,7 +216,7 @@ const AlarmCreateScreen = () => {
         <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={() => navigation.goBack()}>
           <Text style={styles.buttonText}>취소</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.button, styles.saveButton]} onPress={handleSave}>
+        <TouchableOpacity style={[styles.button, styles.saveButton]}>
           <Text style={styles.buttonText}>저장</Text>
         </TouchableOpacity>
       </View>

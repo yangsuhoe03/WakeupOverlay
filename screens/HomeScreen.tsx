@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Switch, Platform, PermissionsAndroid, Modal, ActivityIndicator, Button, Alert, } from 'react-native';
 import { useNavigation, useRoute, RouteProp, useIsFocused } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage'; 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/HomeStackNavigator';
 import { NativeModules } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 
 import notifee, { TimestampTrigger, TriggerType } from '@notifee/react-native';
 
@@ -16,39 +17,39 @@ async function onDisplayNotification() {
 
     // Create a channel (required for Android)
     const channelId = await notifee.createChannel({
-      id: 'wakeup-alarm',
-      name: 'Wakeup Alarms',
-      sound: 'default', // 기본 사운드 사용
-      importance: 4, // AndroidImportance.HIGH
+        id: 'wakeup-alarm',
+        name: 'Wakeup Alarms',
+        sound: 'default', // 기본 사운드 사용
+        importance: 4, // AndroidImportance.HIGH
     });
 
     // Create a time-based trigger
     const trigger: TimestampTrigger = {
-      type: TriggerType.TIMESTAMP,
-      timestamp: Date.now() + 10000, // 10 seconds from now
+        type: TriggerType.TIMESTAMP,
+        timestamp: Date.now() + 10000, // 10 seconds from now
     };
 
     // Display a trigger notification
     await notifee.createTriggerNotification(
-      {
-        title: 'Wake Up!',
-        body: '알람을 끄고 새로운 하루를 시작하세요!',
-        android: {
-          channelId,
-          loopSound: true, // 사운드 반복
-          // required for calls and alarms with full-screen intent
-          fullScreenAction: {
-            id: 'default',
-            // Launch the app's AlarmRingingActivity when the alarm fires
-            launchActivity: 'com.wakeupoverlay.AlarmRingingActivity',
-          },
+        {
+            title: 'Wake Up!',
+            body: '알람을 끄고 새로운 하루를 시작하세요!',
+            android: {
+                channelId,
+                loopSound: true, // 사운드 반복
+                // required for calls and alarms with full-screen intent
+                fullScreenAction: {
+                    id: 'default',
+                    // Launch the app's AlarmRingingActivity when the alarm fires
+                    launchActivity: 'com.wakeupoverlay.AlarmRingingActivity',
+                },
+            },
         },
-      },
-      trigger,
+        trigger,
     );
 
     Alert.alert('알람 설정 완료', '10초 뒤에 알람이 울립니다.');
-  }
+}
 
 const dummyAlarms = [
     {
@@ -75,13 +76,13 @@ const dummyAlarms = [
 
 
 
-const HomeScreen = () => { 
+const HomeScreen = () => {
 
-     const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
-     const [alarms, setAlarms] = useState<any[]>([]);
-     const isFocused = useIsFocused();
+    const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
+    const [alarms, setAlarms] = useState<any[]>([]);
+    const isFocused = useIsFocused();
 
-     useEffect(() => {
+    useEffect(() => {
         const loadAlarms = async () => {
             try {
                 const existingAlarms = await AsyncStorage.getItem('@alarms');
@@ -95,7 +96,7 @@ const HomeScreen = () => {
         if (isFocused) {
             loadAlarms();
         }
-     }, [isFocused]);
+    }, [isFocused]);
 
 
 
@@ -151,35 +152,35 @@ const HomeScreen = () => {
     };
     const handleEdit = (alarm: any) => { // 알람 수정
         // 알람 수정 화면으로 이동                                                                 
-        navigation.navigate('AlarmCreate', { alarmToEdit: alarm });                                                     
-    };  
+        navigation.navigate('AlarmCreate', { alarmToEdit: alarm });
+    };
 
     const handleDelete = (id: string) => {// 알람 삭제
-      // 알람 삭제 확인 모달 표시
-      Alert.alert(
-        "알람 삭제",
-        "정말로 이 알람을 삭제하시겠습니까?",
-        [
-          {
-            text: "취소",
-            style: "cancel"
-          },
-          {
-            text: "삭제",
-            onPress: async () => {
-              try {
-                const updatedAlarms = alarms.filter(alarm => alarm.id !== id);
-                await AsyncStorage.setItem('@alarms', JSON.stringify(updatedAlarms));
-                setAlarms(updatedAlarms);
-              } catch (e) {
-                console.error('Failed to delete alarm.', e);
-                Alert.alert('오류', '알람을 삭제하는 데 실패했습니다.');
-              }
-            },
-            style: 'destructive'
-          }
-        ]
-      );
+        // 알람 삭제 확인 모달 표시
+        Alert.alert(
+            "알람 삭제",
+            "정말로 이 알람을 삭제하시겠습니까?",
+            [
+                {
+                    text: "취소",
+                    style: "cancel"
+                },
+                {
+                    text: "삭제",
+                    onPress: async () => {
+                        try {
+                            const updatedAlarms = alarms.filter(alarm => alarm.id !== id);
+                            await AsyncStorage.setItem('@alarms', JSON.stringify(updatedAlarms));
+                            setAlarms(updatedAlarms);
+                        } catch (e) {
+                            console.error('Failed to delete alarm.', e);
+                            Alert.alert('오류', '알람을 삭제하는 데 실패했습니다.');
+                        }
+                    },
+                    style: 'destructive'
+                }
+            ]
+        );
     };
 
     //const alarms = dummyAlarms; //임시 추후 대체하기
@@ -200,31 +201,56 @@ const HomeScreen = () => {
             </Modal>
 
 
-            <View style={styles.nextAlarmBox}>
+            <LinearGradient
+                colors={['#ff66b3', '#d966ff']} // 원하는 색상으로 조정
+                start={{ x: 0, y: 0 }}          // 시작점
+                end={{ x: 1, y: 1 }}            // 끝점 (대각선)
+                style={styles.nextAlarmBox}     // 기존 View 스타일 그대로 사용
+            >
                 <Text style={styles.nextAlarmTitle}>다음 알람까지</Text>
                 <Text style={styles.nextAlarmTime}>6시간 40분</Text>
                 <Button title="10초 뒤 알람 설정 (테스트)" onPress={() => onDisplayNotification()} />
-            </View>
+            </LinearGradient>
 
             {/* 상태 박스 2개 (성공/실패, 평균 기상 시간) */}
             <View style={styles.statusBoxContainer}>
-                <View style={styles.statusBox}>
-                    <Text style={styles.statusText}>오늘 기상 성공! (7:05AM)</Text>
-                </View>
+                <LinearGradient
+                    colors={['#ffe04c', '#ffb366']} // 원하는 색상으로 조정
+                    locations={[0, 0.8]}
+                    start={{ x: 0, y: 0 }}          // 시작점
+                    end={{ x: 1, y: 1 }}            // 끝점 (대각선)
+                    style={styles.statusBox}     // 기존 View 스타일 그대로 사용
+                >
+                    <Text style={styles.statusText1}>오늘 기상</Text>
+                    <Text style={styles.statusText2}>성공!</Text>
+                    <Text style={styles.statusText3}>7:05AM</Text>
+                </LinearGradient>
 
-                <View style={styles.statusBox}>
-                    <Text style={styles.statusText}>
-                        평균 기상 시간{'\n'}7:12{'\n'}지난 7일
-                    </Text>
-                </View>
+                <LinearGradient
+                    colors={['#6666ff', '#d966ff']} // 원하는 색상으로 조정
+                    start={{ x: 0, y: 0 }}          // 시작점
+                    end={{ x: 1, y: 1 }}            // 끝점 (대각선)
+                    style={styles.statusBox}     // 기존 View 스타일 그대로 사용
+                >
+                    <Text style={styles.statusText1}>평균 기상 시간</Text>
+                    <Text style={styles.statusText2}>7:12</Text>
+                    <Text style={styles.statusText3}>지난 7일</Text>
+                </LinearGradient>
             </View>
 
             {/* 내 알람 헤더 */}
             <View style={styles.alarmHeader}>
                 <Text style={styles.alarmHeaderText}>내 알람</Text>
-                <TouchableOpacity onPress={handleAddAlarm}>
-                    <Text style={styles.addButton}>+ 추가</Text>
-                </TouchableOpacity>
+                <LinearGradient
+                    colors={['#ff66b3', '#d966ff']} // 원하는 색상으로 조정
+                    start={{ x: 0, y: 0 }}          // 시작점
+                    end={{ x: 1, y: 1 }}            // 끝점 (대각선)
+                    style={styles.addButtonBox}     // 기존 View 스타일 그대로 사용
+                >
+                    <TouchableOpacity onPress={handleAddAlarm}>
+                        <Text style={styles.addButton}>+ 추가</Text>
+                    </TouchableOpacity>
+                </LinearGradient>
             </View>
 
             {/* 알람 리스트 */}
@@ -266,9 +292,8 @@ const HomeScreen = () => {
                 />
             ) : ( //알람 리스트가 비어있다면
                 <View style={styles.emptyAlarmContainer}>
-                    <TouchableOpacity>
-                        <Text style={styles.addAlarmText}>알람 추가</Text>
-                    </TouchableOpacity>
+                    <Text style={styles.noAlarmText}>알람이 없습니다</Text>
+                    <Text style={styles.addAlarmText}>새 알람을 추가해보세요!</Text>
                 </View>
             )}
         </View>
@@ -280,7 +305,7 @@ export default HomeScreen;
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 16,
+        padding: 20,
     },
     modalOverlay: {
         flex: 1,
@@ -297,39 +322,53 @@ const styles = StyleSheet.create({
     title: { fontSize: 20, fontWeight: 'bold', marginBottom: 10 },
     description: { fontSize: 16, marginBottom: 20 },
     nextAlarmBox: {
-        backgroundColor: 'rgba(205, 223, 255, 1)ff',
         padding: 16,
         borderRadius: 12,
-        marginBottom: 12,
+        marginTop: 16,
+        marginBottom: 24,
         alignItems: 'center',
     },
     nextAlarmTitle: {
         fontSize: 16,
-        color: '#555',
+        color: '#ffffffff',
     },
     nextAlarmTime: {
         fontSize: 28,
+        color: '#ffffffff',
         fontWeight: 'bold',
-        marginTop: 4,
+        marginTop: 6,
     },
     statusBoxContainer: {
         flexDirection: 'row',
+        alignItems: 'center',
         justifyContent: 'space-between',
-        gap: 8,
+        gap: 12,
         marginBottom: 16,
     },
     statusBox: {
         flex: 1,
-        backgroundColor: '#F2F2F2',
-        padding: 12,
+        padding: 20,
         borderRadius: 10,
-        justifyContent: 'center',
-        alignItems: 'center',
+        justifyContent: 'flex-start',
+        alignItems: 'flex-start',
     },
-    statusText: {
+    statusText1: {
         textAlign: 'center',
         fontSize: 14,
-        color: '#333',
+        color: '#ffffffff',
+        marginTop: 8,
+    }, statusText2: {
+        textAlign: 'center',
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: '#ffffffff',
+        marginTop: 6,
+        marginBottom: 6,
+    }, statusText3: {
+        textAlign: 'center',
+        fontSize: 14,
+        color: '#ffffffff',
+        marginBottom: 8,
     },
     alarmHeader: {
         flexDirection: 'row',
@@ -338,12 +377,20 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     alarmHeaderText: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: 'bold',
+        color: '#1d1d1dff',
+    },
+    addButtonBox: {
+        padding: 16,
+        borderRadius: 12,
+        marginTop: 16,
+        marginBottom: 24,
+        alignItems: 'center',
     },
     addButton: {
         fontSize: 16,
-        color: '#007AFF',
+        color: '#ffffffff',
     },
     alarmItem: {
         backgroundColor: '#FFF',
@@ -389,11 +436,17 @@ const styles = StyleSheet.create({
         color: '#007AFF',
     },
     emptyAlarmContainer: {
+        flexDirection: 'column',
         marginTop: 24,
         alignItems: 'center',
     },
+    noAlarmText: {
+        fontSize: 18,
+        color: '#818181ff',
+        marginBottom: 8,
+    },
     addAlarmText: {
         fontSize: 16,
-        color: '#007AFF',
+        color: '#818181ff',
     },
 });
