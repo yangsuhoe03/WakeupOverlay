@@ -154,8 +154,25 @@ const HomeScreen = () => {
         navigation.navigate('AlarmCreate', { alarmToEdit: alarm });                                                     
     };  
 
-    const handleDelete = (id: string) => {// 알람 삭제
-      // 알람 삭제 확인 모달 표시
+    const handleViewScheduledAlarms = async () => {
+      try {
+        const notifications = await notifee.getTriggerNotifications();
+        console.log('Currently scheduled notifications:', JSON.stringify(notifications, null, 2));
+        if (notifications.length > 0) {
+          const notificationList = notifications.map(n => 
+            `ID: ${n.notification.id}\nTrigger: ${new Date(n.trigger.timestamp).toLocaleString()}`
+          ).join('\n\n');
+          Alert.alert('예약된 알람 목록', notificationList);
+        } else {
+          Alert.alert('예약된 알람 목록', '현재 예약된 알람이 없습니다.');
+        }
+      } catch (e) {
+        console.error('Failed to get scheduled alarms', e);
+        Alert.alert('오류', '예약된 알람을 가져오는 데 실패했습니다.');
+      }
+    };  
+
+    const handleDelete = (id: string) => {
       Alert.alert(
         "알람 삭제",
         "정말로 이 알람을 삭제하시겠습니까?",
@@ -168,6 +185,15 @@ const HomeScreen = () => {
             text: "삭제",
             onPress: async () => {
               try {
+                // Cancel all possible notifications for this alarm
+                // 1. The one-time alarm ID
+                await notifee.cancelNotification(id);
+                // 2. All potential weekly alarm IDs (0 for Sun, 1 for Mon, etc.)
+                for (let i = 0; i < 7; i++) {
+                  await notifee.cancelNotification(`${id}-${i}`);
+                }
+                console.log(`Cancelled all notifications for alarm id: ${id}`);
+
                 const updatedAlarms = alarms.filter(alarm => alarm.id !== id);
                 await AsyncStorage.setItem('@alarms', JSON.stringify(updatedAlarms));
                 setAlarms(updatedAlarms);
@@ -204,6 +230,8 @@ const HomeScreen = () => {
                 <Text style={styles.nextAlarmTitle}>다음 알람까지</Text>
                 <Text style={styles.nextAlarmTime}>6시간 40분</Text>
                 <Button title="10초 뒤 알람 설정 (테스트)" onPress={() => onDisplayNotification()} />
+                <View style={{marginTop: 8}} />
+                <Button title="예약된 알람 목록 확인" onPress={handleViewScheduledAlarms} color="#28a745" />
             </View>
 
             {/* 상태 박스 2개 (성공/실패, 평균 기상 시간) */}
