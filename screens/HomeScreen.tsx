@@ -156,8 +156,25 @@ const HomeScreen = () => {
         navigation.navigate('AlarmCreate', { alarmToEdit: alarm });
     };
 
-    const handleDelete = (id: string) => {// 알람 삭제
-        // 알람 삭제 확인 모달 표시
+    const handleViewScheduledAlarms = async () => {
+        try {
+            const notifications = await notifee.getTriggerNotifications();
+            console.log('Currently scheduled notifications:', JSON.stringify(notifications, null, 2));
+            if (notifications.length > 0) {
+                const notificationList = notifications.map(n =>
+                    `ID: ${n.notification.id}\nTrigger: ${new Date(n.trigger.timestamp).toLocaleString()}`
+                ).join('\n\n');
+                Alert.alert('예약된 알람 목록', notificationList);
+            } else {
+                Alert.alert('예약된 알람 목록', '현재 예약된 알람이 없습니다.');
+            }
+        } catch (e) {
+            console.error('Failed to get scheduled alarms', e);
+            Alert.alert('오류', '예약된 알람을 가져오는 데 실패했습니다.');
+        }
+    };
+
+    const handleDelete = (id: string) => {
         Alert.alert(
             "알람 삭제",
             "정말로 이 알람을 삭제하시겠습니까?",
@@ -170,6 +187,15 @@ const HomeScreen = () => {
                     text: "삭제",
                     onPress: async () => {
                         try {
+                            // Cancel all possible notifications for this alarm
+                            // 1. The one-time alarm ID
+                            await notifee.cancelNotification(id);
+                            // 2. All potential weekly alarm IDs (0 for Sun, 1 for Mon, etc.)
+                            for (let i = 0; i < 7; i++) {
+                                await notifee.cancelNotification(`${id}-${i}`);
+                            }
+                            console.log(`Cancelled all notifications for alarm id: ${id}`);
+
                             const updatedAlarms = alarms.filter(alarm => alarm.id !== id);
                             await AsyncStorage.setItem('@alarms', JSON.stringify(updatedAlarms));
                             setAlarms(updatedAlarms);
@@ -215,95 +241,100 @@ const HomeScreen = () => {
                 <Text style={styles.nextAlarmTime}>6시간 40분</Text>
                 <Button title="10초 뒤 알람 설정 (테스트)" onPress={() => onDisplayNotification()} />
             </LinearGradient>
-
-            {/* 상태 박스 2개 (성공/실패, 평균 기상 시간) */}
-            <View style={styles.statusBoxContainer}>
-                <LinearGradient
-                    colors={['#ffe04c', '#ffb366']} // 원하는 색상으로 조정
-                    locations={[0, 0.8]}
-                    start={{ x: 0, y: 0 }}          // 시작점
-                    end={{ x: 1, y: 1 }}            // 끝점 (대각선)
-                    style={styles.statusBox}     // 기존 View 스타일 그대로 사용
-                >
-                    <View style={styles.justrow2}>
-                        <Text style={styles.statusText1}>오늘 기상</Text>
-                        <Icon name="trending-up" size={24} color="#ffffffff" style={styles.nextAlarmIcon} />
-                    </View>
-                    <Text style={styles.statusText2}>성공!</Text>
-                    <Text style={styles.statusText3}>7:05AM</Text>
-                </LinearGradient>
-
-                <LinearGradient
-                    colors={['#6666ff', '#d966ff']} // 원하는 색상으로 조정
-                    start={{ x: 0, y: 0 }}          // 시작점
-                    end={{ x: 1, y: 1 }}            // 끝점 (대각선)
-                    style={styles.statusBox}     // 기존 View 스타일 그대로 사용
-                >
-                    <Text style={styles.statusText1}>평균 기상 시간</Text>
-                    <Text style={styles.statusText2}>7:12</Text>
-                    <Text style={styles.statusText3}>지난 7일</Text>
-                </LinearGradient>
-            </View>
-
-            {/* 내 알람 헤더 */}
-            <View style={styles.alarmHeader}>
-                <Text style={styles.alarmHeaderText}>내 알람</Text>
-                <LinearGradient
-                    colors={['#ff66b3', '#d966ff']} // 원하는 색상으로 조정
-                    start={{ x: 0, y: 0 }}          // 시작점
-                    end={{ x: 1, y: 1 }}            // 끝점 (대각선)
-                    style={styles.addButtonBox}     // 기존 View 스타일 그대로 사용
-                >
-                    <TouchableOpacity onPress={handleAddAlarm}>
-                        <Text style={styles.addButton}>+ 추가</Text>
-                    </TouchableOpacity>
-                </LinearGradient>
-            </View>
-
-            {/* 알람 리스트 */}
-            {alarms.length > 0 ? ( //알람 리스트가 비어있지 않으면
-                <FlatList
-                    data={alarms}
-                    keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => (
-                        <View style={styles.alarmItem}>
-                            {/* 알람 이름 */}
-                            <Text style={styles.alarmName}>{item.name}</Text>
-
-                            {/* 시간 + 요일 */}
-                            <View style={styles.alarmInfo}>
-                                <Text style={styles.alarmTime}>
-                                    {item.period} {item.time}
-                                </Text>
-                                <Text style={styles.alarmDays}>{item.days.join(', ')}</Text>
-                            </View>
-
-                            {/* 콘텐츠 타입 + 주제 */}
-                            <Text style={styles.contentType}>
-                                {item.contentType}
-                                {item.topics.length > 0 && `: ${item.topics.join(', ')}`}
-                            </Text>
-
-                            {/* 스위치 + 수정/삭제 */}
-                            <Switch value={item.enabled} />
-                            <View style={styles.alarmActions}>
-                                <TouchableOpacity onPress={() => handleEdit(item)}>
-                                    <Text style={styles.actionButton}>수정</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={() => handleDelete(item.id)}>
-                                    <Text style={styles.actionButton}>삭제</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    )}
-                />
-            ) : ( //알람 리스트가 비어있다면
-                <View style={styles.emptyAlarmContainer}>
-                    <Text style={styles.noAlarmText}>알람이 없습니다</Text>
-                    <Text style={styles.addAlarmText}>새 알람을 추가해보세요!</Text>
-                </View>
-            )}
+            <View style={{ marginTop: 8 }} />
+            <Button title="예약된 알람 목록 확인" onPress={handleViewScheduledAlarms} color="#28a745" />
         </View>
+
+            {/* 상태 박스 2개 (성공/실패, 평균 기상 시간) */ }
+    <View style={styles.statusBoxContainer}>
+        <LinearGradient
+            colors={['#ffe04c', '#ffb366']} // 원하는 색상으로 조정
+            locations={[0, 0.8]}
+            start={{ x: 0, y: 0 }}          // 시작점
+            end={{ x: 1, y: 1 }}            // 끝점 (대각선)
+            style={styles.statusBox}     // 기존 View 스타일 그대로 사용
+        >
+            <View style={styles.justrow2}>
+                <Text style={styles.statusText1}>오늘 기상</Text>
+                <Icon name="trending-up" size={24} color="#ffffffff" style={styles.nextAlarmIcon} />
+            </View>
+            <Text style={styles.statusText2}>성공!</Text>
+            <Text style={styles.statusText3}>7:05AM</Text>
+        </LinearGradient>
+
+        <LinearGradient
+            colors={['#6666ff', '#d966ff']} // 원하는 색상으로 조정
+            start={{ x: 0, y: 0 }}          // 시작점
+            end={{ x: 1, y: 1 }}            // 끝점 (대각선)
+            style={styles.statusBox}     // 기존 View 스타일 그대로 사용
+        >
+            <Text style={styles.statusText1}>평균 기상 시간</Text>
+            <Text style={styles.statusText2}>7:12</Text>
+            <Text style={styles.statusText3}>지난 7일</Text>
+        </LinearGradient>
+    </View>
+
+    {/* 내 알람 헤더 */ }
+    <View style={styles.alarmHeader}>
+        <Text style={styles.alarmHeaderText}>내 알람</Text>
+        <LinearGradient
+            colors={['#ff66b3', '#d966ff']} // 원하는 색상으로 조정
+            start={{ x: 0, y: 0 }}          // 시작점
+            end={{ x: 1, y: 1 }}            // 끝점 (대각선)
+            style={styles.addButtonBox}     // 기존 View 스타일 그대로 사용
+        >
+            <TouchableOpacity onPress={handleAddAlarm}>
+                <Text style={styles.addButton}>+ 추가</Text>
+            </TouchableOpacity>
+        </LinearGradient>
+    </View>
+
+    {/* 알람 리스트 */ }
+    {
+        alarms.length > 0 ? ( //알람 리스트가 비어있지 않으면
+            <FlatList
+                data={alarms}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                    <View style={styles.alarmItem}>
+                        {/* 알람 이름 */}
+                        <Text style={styles.alarmName}>{item.name}</Text>
+
+                        {/* 시간 + 요일 */}
+                        <View style={styles.alarmInfo}>
+                            <Text style={styles.alarmTime}>
+                                {item.period} {item.time}
+                            </Text>
+                            <Text style={styles.alarmDays}>{item.days.join(', ')}</Text>
+                        </View>
+
+                        {/* 콘텐츠 타입 + 주제 */}
+                        <Text style={styles.contentType}>
+                            {item.contentType}
+                            {item.topics.length > 0 && `: ${item.topics.join(', ')}`}
+                        </Text>
+
+                        {/* 스위치 + 수정/삭제 */}
+                        <Switch value={item.enabled} />
+                        <View style={styles.alarmActions}>
+                            <TouchableOpacity onPress={() => handleEdit(item)}>
+                                <Text style={styles.actionButton}>수정</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => handleDelete(item.id)}>
+                                <Text style={styles.actionButton}>삭제</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                )}
+            />
+        ) : ( //알람 리스트가 비어있다면
+        <View style={styles.emptyAlarmContainer}>
+            <Text style={styles.noAlarmText}>알람이 없습니다</Text>
+            <Text style={styles.addAlarmText}>새 알람을 추가해보세요!</Text>
+        </View>
+    )
+    }
+        </View >
     );
 };
 

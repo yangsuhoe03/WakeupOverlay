@@ -8,3 +8,9 @@
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
 # Add any project specific keep options here:
+
+# Keep the classes needed for the overlay functionality
+-keep class com.wakeupoverlay.AlarmRingingActivity { *; }
+-keep class com.wakeupoverlay.OverlayActivity { *; }
+-keep class com.wakeupoverlay.OverlayModule { *; }
+-keep class com.wakeupoverlay.OverlayPackage { *; }
