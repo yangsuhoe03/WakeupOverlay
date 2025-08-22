@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Pressable, Animated, Text, StyleSheet, ScrollView, Switch, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { SettingsStackParamList } from '../navigation/SettingsStackNavigator';
+import Icon from 'react-native-vector-icons/Feather';
+import Toggle from '../components/Toggle';
+import { Linking } from 'react-native';
 
 const SettingsScreen = () => {
   // 네비게이션 훅
@@ -13,10 +16,10 @@ const SettingsScreen = () => {
   };
 
   // 토글 상태
-  const [snooze, setSnooze] = useState(true);
+  const [snooze, setSnooze] = useState(false);
   const [gradualVolume, setGradualVolume] = useState(false);
-  const [vibration, setVibration] = useState(true);
-  const [autoPlay, setAutoPlay] = useState(true);
+  const [vibration, setVibration] = useState(false);
+  const [autoPlay, setAutoPlay] = useState(false);
   const [wifiOnly, setWifiOnly] = useState(false);
 
   return (
@@ -25,14 +28,17 @@ const SettingsScreen = () => {
 
       {/* 알람 설정 */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>알람 설정</Text>
+        <View style={styles.justrow}>
+          <Icon name="bell" size={24} color="#c34cff" style={styles.nextAlarmIcon} />
+          <Text style={styles.sectionTitle}>알람 설정</Text>
+        </View>
 
         <View style={styles.settingRow}>
           <View style={styles.settingText}>
             <Text style={styles.settingName}>스누즈 기능</Text>
             <Text style={styles.settingSub}>5분 후 다시 알람</Text>
           </View>
-          <Switch value={snooze} onValueChange={setSnooze} />
+          <Toggle value={snooze} onChange={setSnooze} />
         </View>
 
         <View style={styles.settingRow}>
@@ -40,7 +46,7 @@ const SettingsScreen = () => {
             <Text style={styles.settingName}>점진적 볼륨 증가</Text>
             <Text style={styles.settingSub}>서서히 볼륨이 커집니다</Text>
           </View>
-          <Switch value={gradualVolume} onValueChange={setGradualVolume} />
+          <Toggle value={gradualVolume} onChange={setGradualVolume} />
         </View>
 
         <View style={styles.settingRow}>
@@ -48,17 +54,20 @@ const SettingsScreen = () => {
             <Text style={styles.settingName}>진동 알람</Text>
             <Text style={styles.settingSub}>소리와 함께 진동</Text>
           </View>
-          <Switch value={vibration} onValueChange={setVibration} />
+          <Toggle value={vibration} onChange={setVibration} />
         </View>
       </View>
 
       {/* 콘텐츠 설정 */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>콘텐츠 설정</Text>
+        <View style={styles.justrow}>
+          <Icon name="video" size={24} color="#ff66cc" style={styles.nextAlarmIcon} />
+          <Text style={styles.sectionTitle}>콘텐츠 설정</Text>
+        </View>
 
         <View style={styles.settingRow}>
           <Text style={styles.settingName}>선호 콘텐츠 유형</Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('PreferredContent')}>
             <Text style={styles.modifyButton}>수정하기 &gt;</Text>
           </TouchableOpacity>
         </View>
@@ -76,7 +85,7 @@ const SettingsScreen = () => {
             <Text style={styles.settingName}>자동 재생</Text>
             <Text style={styles.settingSub}>알람 후 바로 시작</Text>
           </View>
-          <Switch value={autoPlay} onValueChange={setAutoPlay} />
+          <Toggle value={autoPlay} onChange={setAutoPlay} />
         </View>
 
         <View style={styles.settingRow}>
@@ -84,14 +93,16 @@ const SettingsScreen = () => {
             <Text style={styles.settingName}>Wifi에서만 재생</Text>
             <Text style={styles.settingSub}>데이터 절약</Text>
           </View>
-          <Switch value={wifiOnly} onValueChange={setWifiOnly} />
+          <Toggle value={wifiOnly} onChange={setWifiOnly} />
         </View>
       </View>
 
       {/* 앱 정보 */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>앱 정보</Text>
-
+        <View style={styles.justrow}>
+          <Icon name="info" size={24} color="#ffe76e" style={styles.nextAlarmIcon} />
+          <Text style={styles.sectionTitle}>앱 정보</Text>
+        </View>
         <View style={styles.infoRow}>
           <Text style={styles.settingName}>버전</Text>
           <Text>1.0.1</Text>
@@ -101,28 +112,11 @@ const SettingsScreen = () => {
           <Text>royalkingkiwi</Text>
         </View>
 
-        <TouchableOpacity style={styles.linkBox}>
-          <Text style={styles.linkText}>이용약관</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.linkBox}>
-          <Text style={styles.linkText}>개인정보처리방침</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.linkBox}>
+        <TouchableOpacity style={styles.linkBox} onPress={() => Linking.openURL('https://docs.google.com/forms/d/e/1FAIpQLSdZZg9YyR-uqNJmjbaL-d_nuYf-tmtxOu_3_ydWkUIW5cyOHA/viewform?usp=header')}>
           <Text style={styles.linkText}>문의하기</Text>
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity
-        style={styles.testButton}
-        onPress={() => navigation.navigate('ContentPlayer')}
-      >
-        <Text style={styles.testButtonText}>영상 테스트</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.testButton} onPress={goToAlarmRinging}>
-        <Text style={styles.testButtonText}>알람 울리기 테스트</Text>
-      </TouchableOpacity>
-      
     </ScrollView>
 
 
@@ -133,7 +127,7 @@ export default SettingsScreen;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8f9fa', padding: 16 },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
+  title: { fontSize: 24, fontWeight: 'bold', color: "#333", margin: 12, marginBottom: 20 },
   section: {
     backgroundColor: '#fff',
     borderRadius: 10,
@@ -141,7 +135,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     elevation: 1,
   },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
+  sectionTitle: { fontSize: 20, color: "#333", fontWeight: 'bold', marginBottom: 12, },
   settingRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -151,8 +145,8 @@ const styles = StyleSheet.create({
     borderBottomColor: '#eee',
   },
   settingText: { flex: 1, marginRight: 8 },
-  settingName: { fontSize: 14, fontWeight: '500' },
-  settingSub: { fontSize: 12, color: '#777' },
+  settingName: { fontSize: 15, color: '#333', fontWeight: '500' },
+  settingSub: { fontSize: 13, color: '#777' },
   modifyButton: { fontSize: 14, color: '#007AFF' },
   tagContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginVertical: 8 },
   tag: {
@@ -186,5 +180,30 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  nextAlarmIcon: {
+    alignItems: 'center',
+    marginRight: 6,
+  },
+  justrow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start'
+  },
+  toggleBackground: {
+    width: 50,
+    height: 26,
+    borderRadius: 20,
+    justifyContent: 'center',
+    padding: 2,
+  },
+  toggleHandle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 2,
   },
 });

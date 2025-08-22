@@ -6,6 +6,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/HomeStackNavigator';
 import { NativeModules } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import Icon from 'react-native-vector-icons/Feather';
 
 import notifee, { TimestampTrigger, TriggerType } from '@notifee/react-native';
 
@@ -207,7 +208,10 @@ const HomeScreen = () => {
                 end={{ x: 1, y: 1 }}            // 끝점 (대각선)
                 style={styles.nextAlarmBox}     // 기존 View 스타일 그대로 사용
             >
-                <Text style={styles.nextAlarmTitle}>다음 알람까지</Text>
+                <View style={styles.justrow}>
+                    <Icon name="clock" size={20} color="#fff" style={styles.nextAlarmIcon} />
+                    <Text style={styles.nextAlarmTitle}>다음 알람까지</Text>
+                </View>
                 <Text style={styles.nextAlarmTime}>6시간 40분</Text>
                 <Button title="10초 뒤 알람 설정 (테스트)" onPress={() => onDisplayNotification()} />
             </LinearGradient>
@@ -221,7 +225,10 @@ const HomeScreen = () => {
                     end={{ x: 1, y: 1 }}            // 끝점 (대각선)
                     style={styles.statusBox}     // 기존 View 스타일 그대로 사용
                 >
-                    <Text style={styles.statusText1}>오늘 기상</Text>
+                    <View style={styles.justrow2}>
+                        <Text style={styles.statusText1}>오늘 기상</Text>
+                        <Icon name="trending-up" size={24} color="#ffffffff" style={styles.nextAlarmIcon} />
+                    </View>
                     <Text style={styles.statusText2}>성공!</Text>
                     <Text style={styles.statusText3}>7:05AM</Text>
                 </LinearGradient>
@@ -328,6 +335,9 @@ const styles = StyleSheet.create({
         marginBottom: 24,
         alignItems: 'center',
     },
+    nextAlarmIcon: {
+        marginRight: 6,
+    },
     nextAlarmTitle: {
         fontSize: 16,
         color: '#ffffffff',
@@ -349,7 +359,7 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 20,
         borderRadius: 10,
-        justifyContent: 'flex-start',
+        width: '100%',
         alignItems: 'flex-start',
     },
     statusText1: {
@@ -448,5 +458,15 @@ const styles = StyleSheet.create({
     addAlarmText: {
         fontSize: 16,
         color: '#818181ff',
+    },
+    justrow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    justrow2: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        width: '100%', // 추가
     },
 });
