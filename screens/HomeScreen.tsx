@@ -161,9 +161,13 @@ const HomeScreen = () => {
             const notifications = await notifee.getTriggerNotifications();
             console.log('Currently scheduled notifications:', JSON.stringify(notifications, null, 2));
             if (notifications.length > 0) {
-                const notificationList = notifications.map(n =>
-                    `ID: ${n.notification.id}\nTrigger: ${new Date(n.trigger.timestamp).toLocaleString()}`
-                ).join('\n\n');
+                const notificationList = notifications.map(n => {
+                    if (n.trigger.type === TriggerType.TIMESTAMP && 'timestamp' in n.trigger) {
+                        return `ID: ${n.notification.id}\nTrigger: ${new Date((n.trigger as TimestampTrigger).timestamp).toLocaleString()}`;
+                    } else {
+                        return `ID: ${n.notification.id}\nTrigger: (타입: ${n.trigger.type})`;
+                    }
+                }).join('\n\n');
                 Alert.alert('예약된 알람 목록', notificationList);
             } else {
                 Alert.alert('예약된 알람 목록', '현재 예약된 알람이 없습니다.');
