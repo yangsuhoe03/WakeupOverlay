@@ -6,6 +6,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/HomeStackNavigator';
 import { NativeModules } from 'react-native';
 
+import { scheduleAlarm } from '../services/AlarmService';
 import notifee, { TimestampTrigger, TriggerType } from '@notifee/react-native';
 
 const { OverlayModule } = NativeModules;
@@ -159,9 +160,21 @@ const HomeScreen = () => {
         const notifications = await notifee.getTriggerNotifications();
         console.log('Currently scheduled notifications:', JSON.stringify(notifications, null, 2));
         if (notifications.length > 0) {
-          const notificationList = notifications.map(n => 
-            `ID: ${n.notification.id}\nTrigger: ${new Date(n.trigger.timestamp).toLocaleString()}`
-          ).join('\n\n');
+          const notificationList = notifications
+            .map(n => {
+              let triggerText = 'Unknown Trigger';
+              if (n.trigger.type === TriggerType.TIMESTAMP) {
+                // It's a safe cast now
+                const timestampTrigger = n.trigger as TimestampTrigger;
+                triggerText = `Time: ${new Date(timestampTrigger.timestamp).toLocaleString()}`;
+              } else if (n.trigger.type === TriggerType.INTERVAL) {
+                // It's a safe cast now
+                const intervalTrigger = n.trigger as any; // Using any for simplicity as IntervalTrigger might not be explicitly imported
+                triggerText = `Interval: every ${intervalTrigger.interval} ${intervalTrigger.timeUnit || 'minutes'}`;
+              }
+              return `ID: ${n.notification.id}\nTrigger: ${triggerText}`;
+            })
+            .join('\n\n');
           Alert.alert('예약된 알람 목록', notificationList);
         } else {
           Alert.alert('예약된 알람 목록', '현재 예약된 알람이 없습니다.');
@@ -185,18 +198,26 @@ const HomeScreen = () => {
             text: "삭제",
             onPress: async () => {
               try {
-                // Cancel all possible notifications for this alarm
-                // 1. The one-time alarm ID
-                await notifee.cancelNotification(id);
-                // 2. All potential weekly alarm IDs (0 for Sun, 1 for Mon, etc.)
-                for (let i = 0; i < 7; i++) {
-                  await notifee.cancelNotification(`${id}-${i}`);
-                }
-                console.log(`Cancelled all notifications for alarm id: ${id}`);
-
+                // 1. Create the new list without the deleted alarm.
                 const updatedAlarms = alarms.filter(alarm => alarm.id !== id);
+                
+                // 2. Save the new list to storage.
                 await AsyncStorage.setItem('@alarms', JSON.stringify(updatedAlarms));
-                setAlarms(updatedAlarms);
+                setAlarms(updatedAlarms); // Update UI immediately
+
+                // 3. Cancel all scheduled notifications.
+                await notifee.cancelAllNotifications();
+
+                // 4. Re-schedule all enabled alarms from the new list.
+                for (const alarm of updatedAlarms) {
+                  if (alarm.enabled) {
+                    await scheduleAlarm(alarm);
+                  }
+                }
+
+                console.log(`Alarm ${id} deleted and all alarms re-scheduled.`);
+                Alert.alert('성공', '알람이 삭제되었습니다.');
+
               } catch (e) {
                 console.error('Failed to delete alarm.', e);
                 Alert.alert('오류', '알람을 삭제하는 데 실패했습니다.');

@@ -65,9 +65,25 @@ class AlarmRingingActivity : ReactActivity() {
       override fun getLaunchOptions(): Bundle? {
         val bundle = Bundle()
         val notification = intent.getBundleExtra("notifee_notification")
+
+        // Log all extras in the intent
+        val extras = intent.extras
+        if (extras != null) {
+            for (key in extras.keySet()) {
+                val value = extras.get(key)
+                Log.d(TAG, "Intent extra: $key = $value")
+            }
+        } else {
+            Log.d(TAG, "Intent has no extras.")
+        }
+
         if (notification != null) {
+            Log.d(TAG, "Found 'notifee_notification' bundle.")
             val notificationId = notification.getString("id")
             bundle.putString("notificationId", notificationId)
+            Log.d(TAG, "Passing notificationId to React Native: $notificationId")
+        } else {
+            Log.w(TAG, "'notifee_notification' bundle not found in intent.")
         }
         return bundle
       }

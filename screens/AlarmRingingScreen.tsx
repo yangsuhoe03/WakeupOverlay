@@ -1,46 +1,40 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, NativeModules } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, NativeModules, Alert } from 'react-native';
 import notifee from '@notifee/react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { scheduleAlarm } from '../services/AlarmService';
 
 const { OverlayModule } = NativeModules;
 
-const AlarmRingingScreen = (props: any) => {
-  const [notificationId, setNotificationId] = useState<string | undefined>(undefined);
-
-  useEffect(() => {
-    console.log('[AlarmRingingScreen] useEffect triggered.');
-    const getInitialNotification = async () => {
-      // Check if the app was launched by a notification
-      const initialNotification = await notifee.getInitialNotification();
-
-      if (initialNotification) {
-        console.log('App launched by notification:', JSON.stringify(initialNotification, null, 2));
-        setNotificationId(initialNotification.notification.id);
-      } else {
-        // Fallback for foreground navigation case
-        const idFromNav = props.route?.params?.notificationId;
-        if (idFromNav) {
-          console.log('Notification ID from navigation params:', idFromNav);
-          setNotificationId(idFromNav);
-        }
-      }
-    };
-
-    getInitialNotification();
-  }, [props.route?.params?.notificationId]);
+const AlarmRingingScreen = () => {
 
   const handleDismiss = async () => {
     console.log('[handleDismiss] Pressed dismiss button.');
     try {
-      if (notificationId) {
-        console.log(`[handleDismiss] Attempting to cancel notification with ID: ${notificationId}`);
-        await notifee.cancelNotification(notificationId);
-        console.log(`[handleDismiss] Successfully cancelled notification ${notificationId}.`);
+      // 1. Cancel all currently scheduled notifications
+      console.log('[handleDismiss] Cancelling all notifications.');
+      await notifee.cancelAllNotifications();
+
+      // 2. Get all saved alarms from storage
+      console.log('[handleDismiss] Fetching all saved alarms from AsyncStorage.');
+      const alarmsJson = await AsyncStorage.getItem('@alarms');
+      if (alarmsJson) {
+        const alarms = JSON.parse(alarmsJson);
+        console.log(`[handleDismiss] Found ${alarms.length} saved alarms.`);
+
+        // 3. Re-schedule all enabled alarms
+        console.log('[handleDismiss] Re-scheduling enabled alarms for the next occurrence.');
+        for (const alarm of alarms) {
+          if (alarm.enabled) {
+            await scheduleAlarm(alarm);
+          }
+        }
+        console.log('[handleDismiss] Finished re-scheduling alarms.');
       } else {
-        console.log('[handleDismiss] No notificationId found, cancelling all notifications as a fallback.');
-        await notifee.cancelAllNotifications();
+        console.log('[handleDismiss] No saved alarms found in AsyncStorage.');
       }
 
+      // 4. Show the overlay and close this screen
       console.log('[handleDismiss] Showing YouTube overlay...');
       OverlayModule.showOverlay();
 
@@ -49,6 +43,7 @@ const AlarmRingingScreen = (props: any) => {
 
     } catch (e) {
       console.error('[handleDismiss] An error occurred:', e);
+      Alert.alert('오류', '알람을 다시 예약하는 중 오류가 발생했습니다.');
     } finally {
       console.log('[handleDismiss] Function finished.');
     }
@@ -57,7 +52,6 @@ const AlarmRingingScreen = (props: any) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Wake Up!</Text>
-      <Text style={styles.subtitle}>ID: {notificationId || 'N/A'}</Text>
       <TouchableOpacity style={styles.button} onPress={handleDismiss}>
         <Text style={styles.buttonText}>알람 끄기</Text>
       </TouchableOpacity>
@@ -76,11 +70,6 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: 'bold',
     color: 'white',
-    marginBottom: 20,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: 'grey',
     marginBottom: 80,
   },
   button: {

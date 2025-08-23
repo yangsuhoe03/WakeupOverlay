@@ -5,7 +5,8 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/HomeStackNavigator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import notifee, { TimestampTrigger, TriggerType, RepeatFrequency } from '@notifee/react-native';
+import notifee from '@notifee/react-native';
+import { scheduleAlarm } from '../services/AlarmService';
 
 const AlarmCreateScreen = () => {
 
@@ -60,102 +61,13 @@ const AlarmCreateScreen = () => {
   const [alarmList, setAlarmList] = useState<any[]>([]);
   const [alarmId, setAlarmId] = useState(1);
 
-  const scheduleAlarm = async (alarmData: any) => {
-    console.log('Scheduling alarm with notifee:', alarmData);
-  
-    const channelId = await notifee.createChannel({
-      id: 'wakeup-alarm',
-      name: 'Wakeup Alarms',
-      sound: 'default',
-      importance: 4, // AndroidImportance.HIGH
-    });
-  
-    const pickerHour = parseInt(alarmData.time.split(':')[0], 10);
-    const pickerMinute = parseInt(alarmData.time.split(':')[1], 10);
-    let hour24 = pickerHour;
-    if (alarmData.period === '오후' && pickerHour !== 12) {
-      hour24 += 12;
-    } else if (alarmData.period === '오전' && pickerHour === 12) {
-      hour24 = 0;
-    }
-  
-    // If no days are selected, schedule a one-time alarm for the next occurrence
-    if (alarmData.days.length === 0) {
-      const now = new Date();
-      const triggerDate = new Date();
-      triggerDate.setHours(hour24, pickerMinute, 0, 0);
-  
-      if (triggerDate.getTime() <= now.getTime()) {
-        triggerDate.setDate(triggerDate.getDate() + 1);
-      }
-  
-      const trigger: TimestampTrigger = {
-        type: TriggerType.TIMESTAMP,
-        timestamp: triggerDate.getTime(),
-      };
-  
-      await notifee.createTriggerNotification(
-        {
-          id: alarmData.id, // Use the main alarm ID
-          title: alarmData.name,
-          body: '알람을 끄고 새로운 하루를 시작하세요!',
-          android: { channelId, loopSound: true, fullScreenAction: { id: 'default', launchActivity: 'com.wakeupoverlay.AlarmRingingActivity' } },
-        },
-        trigger,
-      );
-      console.log(`One-time alarm scheduled for ${triggerDate.toString()}`);
-      Alert.alert('알람 저장됨', `다음 알람: ${triggerDate.toLocaleString()}`);
-      return;
-    }
-  
-    // If days are selected, schedule a weekly repeating alarm for each selected day
-    for (const dayName of alarmData.days) {
-      const dayIndex = daysKor.indexOf(dayName);
-      if (dayIndex === -1) continue;
-  
-      const now = new Date();
-      const triggerDate = new Date();
-      triggerDate.setHours(hour24, pickerMinute, 0, 0);
-  
-      // Find the next date for the selected day of the week
-      const currentDay = now.getDay(); // 0 (Sun) - 6 (Sat)
-      let dayDifference = dayIndex - currentDay;
-      if (dayDifference < 0 || (dayDifference === 0 && triggerDate.getTime() <= now.getTime())) {
-        dayDifference += 7;
-      }
-      triggerDate.setDate(now.getDate() + dayDifference);
-  
-      const trigger: TimestampTrigger = {
-        type: TriggerType.TIMESTAMP,
-        timestamp: triggerDate.getTime(),
-        repeatFrequency: RepeatFrequency.WEEKLY,
-      };
-  
-      // Create a unique ID for each day's notification
-      const notificationId = `${alarmData.id}-${dayIndex}`;
-  
-      await notifee.createTriggerNotification(
-        {
-          id: notificationId,
-          title: alarmData.name,
-          body: `매주 ${dayName}요일 알람입니다!`,
-          android: { channelId, loopSound: true, fullScreenAction: { id: 'default', launchActivity: 'com.wakeupoverlay.AlarmRingingActivity' } },
-        },
-        trigger,
-      );
-      console.log(`Weekly alarm for ${dayName} scheduled for ${triggerDate.toString()}`);
-    }
-    Alert.alert('알람 저장됨', `매주 ${alarmData.days.join(', ')}요일에 알람이 울립니다.`);
-  };
-
-
   const handleSave = async () => {
     if (alarmName.trim() === '') {
       Alert.alert('알림', '알람 이름을 입력해주세요.');
       return;
     }
 
-    const alarmData = {
+    const newAlarmData = {
       id: alarmToEdit?.id || `alarm-${new Date().getTime()}`,
       name: alarmName || '알람',
       period: ampm === 'AM' ? '오전' : '오후',
@@ -167,33 +79,39 @@ const AlarmCreateScreen = () => {
     };
 
     try {
-      // If editing, cancel all possible previous notifications for this alarm
-      if (alarmToEdit) {
-        // Cancel the potential one-time alarm
-        await notifee.cancelNotification(alarmToEdit.id);
-        // Cancel all potential weekly alarms
-        for (let i = 0; i < 7; i++) {
-          await notifee.cancelNotification(`${alarmToEdit.id}-${i}`);
-        }
-      }
+      // 1. Cancel all currently scheduled notifications to ensure a clean slate.
+      console.log('[handleSave] Cancelling all current notifications.');
+      await notifee.cancelAllNotifications();
 
+      // 2. Get the most recent list of alarms from storage.
       const existingAlarmsJson = await AsyncStorage.getItem('@alarms');
       const existingAlarms = existingAlarmsJson ? JSON.parse(existingAlarmsJson) : [];
       
+      // 3. Create the new, updated list of alarms.
       let updatedAlarms;
       if (alarmToEdit) {
         updatedAlarms = existingAlarms.map((alarm: any) => 
-          alarm.id === alarmToEdit.id ? alarmData : alarm
+          alarm.id === alarmToEdit.id ? newAlarmData : alarm
         );
       } else {
-        updatedAlarms = [...existingAlarms, alarmData];
+        updatedAlarms = [...existingAlarms, newAlarmData];
       }
 
+      // 4. Save the fully updated list back to storage.
+      console.log('[handleSave] Saving updated alarm list to AsyncStorage.');
       await AsyncStorage.setItem('@alarms', JSON.stringify(updatedAlarms));
       
-      await scheduleAlarm(alarmData);
+      // 5. Re-schedule all alarms that are marked as enabled from the new list.
+      console.log('[handleSave] Re-scheduling all enabled alarms.');
+      for (const alarm of updatedAlarms) {
+        if (alarm.enabled) {
+          await scheduleAlarm(alarm);
+        }
+      }
 
+      Alert.alert('알람 저장됨', `알람이 저장되었습니다.`);
       navigation.goBack();
+
     } catch (e) {
       console.error('Failed to save or schedule alarm.', e);
       Alert.alert('오류', '알람을 저장하거나 예약하는 데 실패했습니다.');
